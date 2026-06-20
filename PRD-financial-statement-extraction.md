@@ -52,7 +52,9 @@ A Shiny application, shipped as an R package, that:
 | **Standard user** | **View only.** Browse companies, open and read their saved statements (catalog browser + analytics). **No upload, extraction, editing, or saving** of any kind. |
 | **Admin** | Owns the **entire ingestion pipeline**: upload, select pages, demarcate regions, extract, edit in the grid, confirm metadata, run validation, **save**, re-edit already-saved records (overwrite in place, **no versioning**), and manage controlled vocabularies (statement types, audit statuses, entities). |
 
-The ingestion workflow (§5.1–5.6, 5.9) is **admin-gated end to end**; standard users only reach the read surfaces (§5.7–5.8). Role is a simple flag in v1 (config / control-plane `dim_user`); no SSO requirement.
+The ingestion workflow (§5.1–5.6, 5.9) is **admin-gated end to end**; standard users only reach the read surfaces (§5.7–5.8).
+
+**Identity (v1):** roles come from a small set of **seeded test users** in the control-plane `dim_user(user_id, name, role)` table, selected/identified via app config or a minimal login. No SSO. **Firebase Authentication is the planned v2 mechanism** (see §13); the `dim_user` role flag is designed so that swapping the identity source later does not touch the authorization logic — gating reads from `role`, regardless of how identity is established.
 
 ---
 
@@ -294,6 +296,7 @@ fin.extract/
 ---
 
 ## 12. Open questions / risks
+- **Auth (decided):** v1 uses **seeded test users** with role read from `dim_user`; **Firebase Auth deferred to v2**. Keep the authorization layer (role → permitted modules) decoupled from the identity source so the v2 swap is contained. Risk to watch: don't let admin-only ingestion controls render client-side for standard users — gate at the server/module level, not just by hiding UI.
 - Region demarcation UX (interactive crop on a rendered page) is the trickiest front-end piece; spike early.
 - 12-column geometric reconstruction (KCB) is the engine's hardest case and the main argument for prioritizing the v2 AI engine.
 - Period-basis inference (instant vs duration) may need per-statement-type defaults to reduce user tagging effort.
@@ -306,4 +309,5 @@ fin.extract/
 - Canonical chart-of-accounts mapping for line-item normalization.
 - Versioning / audit history of saved records.
 - Multi-currency support and normalization.
+- **Firebase Authentication** replacing seeded test users; map Firebase identity → `dim_user` role without changing the authorization layer.
 - **Control-plane store migration (tripwire from §6.2):** if scaling to multiple write-capable processes, move the control plane only to SQLite (WAL) for safe multi-process concurrency; lake and analytics stay on DuckDB.
