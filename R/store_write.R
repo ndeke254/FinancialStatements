@@ -103,15 +103,10 @@ store_write <- function(long_dt, lake_dir, pool, edited_by = NA_character_) {
   period_end <- unique(long_dt[["period_end"]])
 
   if (!is.null(existing) && nrow(existing) > 0L) {
-    # Keep rows NOT belonging to any of the incoming (entity, period_end) pairs
+    # Keep rows NOT belonging to any of the incoming (entity, period_end) pairs.
+    # Use the !DT anti-join idiom; key_pairs is the set to exclude.
     key_pairs <- data.table::CJ(entity = entity, period_end = period_end)
-    existing <- existing[
-      !data.table::CJ(entity, period_end)[
-        existing,
-        on = c("entity", "period_end"),
-        which = TRUE
-      ]
-    ]
+    existing  <- existing[!key_pairs, on = c("entity", "period_end")]
     combined <- data.table::rbindlist(
       list(existing, long_dt),
       use.names = TRUE,
@@ -121,11 +116,12 @@ store_write <- function(long_dt, lake_dir, pool, edited_by = NA_character_) {
     combined <- data.table::copy(long_dt)
   }
 
-  # Drop partition key columns from the stored data to avoid Hive duplication
-  cols_to_drop <- intersect(c("company", "statement_type"), names(combined))
-  if (length(cols_to_drop)) {
-    combined[, (cols_to_drop) := NULL]
-  }
+  # Keep company/statement_type as real columns in the Parquet file.
+  # DuckDB's hive_partitioning=true would otherwise use the sanitised directory
+  # name as the column value (e.g. "CIC_Insurance_Group" instead of the
+  # original "CIC Insurance Group"), causing WHERE-clause mismatches in
+  # store_read.  Storing the original values in the file takes precedence over
+  # the Hive key.
 
   # -- Write -------------------------------------------------------------------
   part_file <- file.path(partition_dir, "part-0.parquet")
@@ -137,11 +133,15 @@ store_write <- function(long_dt, lake_dir, pool, edited_by = NA_character_) {
   )
 
   # -- Catalog upsert (only after successful write) ----------------------------
-  # Aggregate per-entity/period for the catalog (one entry per confirmed grid)
-  for (i in seq_along(entity)) {
-    ent <- entity[[i]]
-    ped <- period_end[[i]]
-    slice_rows <- long_dt[entity == ent & period_end == ped]
+  # Aggregate per-entity/period for the catalog (one entry per confirmed grid).
+  # Use the Cartesian product so every (entity, period_end) pair is upserted,
+  # regardless of how many unique entities or periods exist in this write.
+  pairs <- data.table::CJ(entity = entity, period_end = period_end)
+  for (i in seq_len(nrow(pairs))) {
+    ent <- pairs[["entity"]][[i]]
+    ped <- pairs[["period_end"]][[i]]
+    slice_rows <- long_dt[long_dt$entity == ent & long_dt$period_end == ped]
+    if (nrow(slice_rows) == 0L) next
 
     catalog_upsert(
       pool = pool,

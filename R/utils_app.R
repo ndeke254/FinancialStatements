@@ -9,3 +9,8 @@
 app_sys <- function(...) {
   system.file(..., package = "fin.extract")
 }
+
+# Make data.table operators visible to cedta() for all package code.
+# Without these in NAMESPACE, [, := ] calls fail with "cedta()" errors.
+#' @importFrom data.table := .SD .I .N .GRP
+NULL

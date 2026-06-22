@@ -3,6 +3,9 @@
 
 pkgload::load_all(export_all = FALSE, helpers = FALSE, attach_testthat = FALSE)
 
+# Enable async extraction (FR-EX-05)
+future::plan(future::multisession)
+
 options(
   # Warn on partial matching (good discipline)
   warnPartialMatchArgs = FALSE,

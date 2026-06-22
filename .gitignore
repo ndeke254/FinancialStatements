@@ -55,7 +55,7 @@ PRD*/
 PRD*.html
 
 # Parquet lake — large binary data, not in source control
-data/lake/
+data/*
 
 # DuckDB control plane — regenerable from the lake
 data/control.duckdb

@@ -66,8 +66,8 @@ make_cic_tokens <- function() {
     tok("2,134,000",                 360, 130, w=50),
     tok("2,065,000",                 465, 130, w=50),
     tok("EPS",                        20, 145),
-    tok("0.30",                      360, 145, w=25),
-    tok("0.28",                      465, 145, w=25)
+    tok("0.30",                      360, 145, w=50),   # same width as currency rows -> same column band
+    tok("0.28",                      465, 145, w=50)
   ))
 }
 
@@ -162,16 +162,18 @@ test_that("region crop excludes tokens outside the box", {
 # CIC multi-row fixture
 # ---------------------------------------------------------------------------
 
-test_that("CIC-style fixture: 4 rows, 2 value columns", {
+test_that("CIC-style fixture: 5 rows (header + 4 data), 2 value columns", {
+  # The header row at y=80 ("H1 2024", "H1 2023") is a row band with empty
+  # label and text values — correctly included as row 1 by the engine.
   result <- reconstruct_table(make_cic_tokens(), page_width = 595)
   expect_equal(result$status, "extracted")
-  expect_equal(nrow(result$table_dt), 4L)
+  expect_equal(nrow(result$table_dt), 5L)
   expect_equal(result$n_value_cols, 2L)
 })
 
 test_that("EPS row value preserved in correct column", {
   result <- reconstruct_table(make_cic_tokens(), page_width = 595)
-  eps_row <- result$table_dt[label %like% "EPS" | label %like% "eps"]
+  eps_row <- result$table_dt[grepl("EPS|eps", label)]
   if (nrow(eps_row) > 0L) {
     expect_true(any(grepl("0.30", unlist(eps_row[, .(col_1, col_2)]))))
   }

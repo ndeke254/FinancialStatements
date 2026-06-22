@@ -169,31 +169,32 @@ detect_row_roles <- function(dt, value_cols = NULL,
                               bold_col = NULL, indent_col = NULL) {
   stopifnot(data.table::is.data.table(dt), "label" %in% names(dt))
 
-  dt[, row_role := {
-    mapply(
-      function(lbl, row_idx) {
-        vtexts <- if (!is.null(value_cols)) {
-          unlist(dt[row_idx, ..value_cols])
-        } else {
-          NULL
-        }
-        bold <- if (!is.null(bold_col) && bold_col %in% names(dt)) {
-          dt[[bold_col]][[row_idx]]
-        } else {
-          FALSE
-        }
-        ind <- if (!is.null(indent_col) && indent_col %in% names(dt)) {
-          dt[[indent_col]][[row_idx]]
-        } else {
-          0L
-        }
-        detect_row_role(lbl, vtexts, bold, ind)
-      },
-      lbl     = label,
-      row_idx = .I,
-      SIMPLIFY = TRUE
-    )
-  }]
+  # Use data.table::set() to avoid the cedta() gate that fires when [,:=]
+  # is called from outside a data.table-aware package context.
+  roles <- mapply(
+    function(lbl, row_idx) {
+      vtexts <- if (!is.null(value_cols)) {
+        unlist(dt[row_idx, value_cols, with = FALSE])
+      } else {
+        NULL
+      }
+      bold <- if (!is.null(bold_col) && bold_col %in% names(dt)) {
+        dt[[bold_col]][[row_idx]]
+      } else {
+        FALSE
+      }
+      ind <- if (!is.null(indent_col) && indent_col %in% names(dt)) {
+        dt[[indent_col]][[row_idx]]
+      } else {
+        0L
+      }
+      detect_row_role(lbl, vtexts, bold, ind)
+    },
+    lbl     = dt[["label"]],
+    row_idx = seq_len(nrow(dt)),
+    SIMPLIFY = TRUE
+  )
+  data.table::set(dt, j = "row_role", value = as.character(roles))
 
   invisible(dt)
 }

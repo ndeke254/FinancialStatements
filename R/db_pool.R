@@ -129,11 +129,14 @@ db_init_schema <- function(pool, lake_dir) {
     )
 
     # -- Catalog ----------------------------------------------------------------
+    # Sequence for catalog_id auto-increment (DuckDB SEQUENCE, not IDENTITY,
+    # because CREATE TABLE IF NOT EXISTS + IDENTITY is not supported in 1.x).
+    DBI::dbExecute(con, "CREATE SEQUENCE IF NOT EXISTS seq_catalog_id START 1")
     DBI::dbExecute(
       con,
       "
       CREATE TABLE IF NOT EXISTS catalog (
-        catalog_id       INTEGER PRIMARY KEY,
+        catalog_id       INTEGER DEFAULT nextval('seq_catalog_id') PRIMARY KEY,
         company          VARCHAR NOT NULL,
         statement_type   VARCHAR NOT NULL,
         entity           VARCHAR NOT NULL,
@@ -154,6 +157,12 @@ db_init_schema <- function(pool, lake_dir) {
     # DROP + recreate is idempotent; the VIEW has no data of its own.
     # Ensure at least one Parquet file exists before the VIEW is resolved —
     # DuckDB requires files to be present at CREATE VIEW time.
+    #
+    # We do NOT use hive_partitioning=true because .hive_val() sanitises
+    # company/statement_type names for filesystem safety (spaces → underscores).
+    # Instead, company and statement_type are stored as real data columns in
+    # every Parquet file, and union_by_name=true tolerates minor schema drift
+    # between the seed file and real partitions.
     db_seed_lake_if_empty(lake_dir)
     DBI::dbExecute(con, "DROP VIEW IF EXISTS v_lake")
     lake_glob <- file.path(lake_dir, "**", "*.parquet")
@@ -162,7 +171,9 @@ db_init_schema <- function(pool, lake_dir) {
       glue::glue(
         "
       CREATE VIEW v_lake AS
-        SELECT * FROM read_parquet('{lake_glob}', hive_partitioning = true)
+        SELECT * FROM read_parquet('{lake_glob}',
+                                   hive_partitioning = false,
+                                   union_by_name     = true)
     "
       )
     )
@@ -191,9 +202,12 @@ db_seed_lake_if_empty <- function(lake_dir) {
   seed_dir <- file.path(lake_dir, "company=__seed__", "statement_type=__seed__")
   dir.create(seed_dir, recursive = TRUE, showWarnings = FALSE)
 
-  # Zero-row data.frame that matches the long-record schema (partition keys
-  # are excluded — they live in the Hive directory names)
+  # Zero-row data.frame with the full long-record schema.
+  # company and statement_type are stored as real data columns (not Hive keys)
+  # so DuckDB can filter them with normal WHERE clauses.
   seed <- data.frame(
+    company = character(0),
+    statement_type = character(0),
     fiscal_year = integer(0),
     entity = character(0),
     period_label = character(0),

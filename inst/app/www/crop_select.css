@@ -1,0 +1,42 @@
+/* crop_select.css — styles for the PDF page preview and rubber-band crop */
+
+.crop-container {
+  position: relative;
+  display: block;
+  cursor: crosshair;
+  user-select: none;
+  -webkit-user-select: none;
+  line-height: 0; /* collapse gap beneath inline-block img */
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.crop-container img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+  pointer-events: none; /* let container catch mouse events */
+}
+
+.crop-selection {
+  position: absolute;
+  border: 2px dashed #0d6efd;
+  background: rgba(13, 110, 253, 0.08);
+  pointer-events: none;
+  box-sizing: border-box;
+  display: none; /* shown by JS on mousedown */
+}
+
+/* Unconfirmed-guess badge shown in mod_upload */
+.guess-badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  background: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffc107;
+  margin-left: 6px;
+}

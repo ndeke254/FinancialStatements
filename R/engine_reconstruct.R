@@ -80,8 +80,8 @@ reconstruct_table <- function(tokens, region = NULL,
     return(.failed_result(method))
   }
 
-  # Drop blank tokens
-  tokens <- tokens[nzchar(trimws(text))]
+  # Drop blank tokens — use $ to avoid shadowing by base::text()
+  tokens <- tokens[nzchar(trimws(tokens$text))]
   if (nrow(tokens) == 0L) {
     return(.failed_result(method))
   }

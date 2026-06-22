@@ -4,8 +4,14 @@ default:
   app_prod: no
   db_path: "data/control.duckdb"
   lake_dir: "data/lake"
+  uploads_dir: "data/uploads"
+  # v1 identity: name must match dim_user.name in the seed (admin | viewer)
+  # Firebase Auth replaces this in v2 without touching authorization logic.
+  current_user: "admin"
 
 production:
   app_prod: yes
   db_path: "data/control.duckdb"
   lake_dir: "data/lake"
+  uploads_dir: "data/uploads"
+  current_user: "admin"

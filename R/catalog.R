@@ -49,12 +49,13 @@ catalog_upsert <- function(
   period_end_s <- format(as.Date(period_end), "%Y-%m-%d")
   extracted_at_s <- format(as.POSIXct(extracted_at), "%Y-%m-%d %H:%M:%S")
 
-  # DuckDB supports INSERT OR REPLACE when there is a UNIQUE constraint
+  # DuckDB: explicit ON CONFLICT target required when table has multiple
+  # UNIQUE constraints (PRIMARY KEY + business-key UNIQUE).
   DBI::dbExecute(
     con,
     glue::glue(
       "
-    INSERT OR REPLACE INTO catalog
+    INSERT INTO catalog
       (company, statement_type, entity, period_end,
        audit_status, source_file, validation_passed,
        n_rows, extracted_at, lake_path)
@@ -70,6 +71,13 @@ catalog_upsert <- function(
       {sql_str(extracted_at_s)},
       {sql_str(lake_path)}
     )
+    ON CONFLICT (company, statement_type, entity, period_end) DO UPDATE SET
+      audit_status      = EXCLUDED.audit_status,
+      source_file       = EXCLUDED.source_file,
+      validation_passed = EXCLUDED.validation_passed,
+      n_rows            = EXCLUDED.n_rows,
+      extracted_at      = EXCLUDED.extracted_at,
+      lake_path         = EXCLUDED.lake_path
   "
     )
   )
