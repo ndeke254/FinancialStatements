@@ -1,0 +1,6 @@
+status_id,name,is_builtin
+1,audited,TRUE
+2,unaudited,TRUE
+3,reviewed,TRUE
+4,restated,TRUE
+5,proforma,TRUE

@@ -38,6 +38,7 @@ vignettes/*.pdf
 
 # R Environment Variables
 .Renviron
+dev.R
 
 # pkgdown site
 docs/
@@ -52,3 +53,13 @@ rsconnect/
 .Rproj.user/
 PRD*/
 PRD*.html
+
+# Parquet lake — large binary data, not in source control
+data/lake/
+
+# DuckDB control plane — regenerable from the lake
+data/control.duckdb
+data/control.duckdb.wal
+
+# Raw uploaded PDFs (keyed by hash)
+inst/extdata/uploads/

@@ -1,0 +1,38 @@
+Package: fin.extract
+Title: Financial Statement Extraction Platform
+Version: 0.0.0.9000
+Authors@R:
+    person("Jefferson", "Ndeke", , "jefferson@example.com", role = c("aut", "cre"))
+Description: Ingests PDF financial statements (native and scanned), extracts
+    tabular data with a column-aware engine, and stores confirmed records in a
+    Hive-partitioned Parquet lake indexed by a DuckDB control plane. Serves
+    a catalog browser and trend visualizations over the saved store.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3
+Imports:
+    golem (>= 0.4.0),
+    shiny (>= 1.8.0),
+    bslib (>= 0.7.0),
+    rhandsontable,
+    reactable,
+    echarts4r,
+    data.table (>= 1.15.0),
+    arrow (>= 14.0.0),
+    duckdb (>= 0.10.0),
+    pool (>= 1.0.0),
+    DBI,
+    pdftools,
+    tesseract,
+    future,
+    promises,
+    shinybusy,
+    config (>= 0.3.1),
+    glue,
+    digest
+Suggests:
+    testthat (>= 3.0.0),
+    withr,
+    pkgload
+Config/testthat/edition: 3

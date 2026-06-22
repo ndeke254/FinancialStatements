@@ -1,0 +1,7 @@
+type_id,name,is_builtin
+1,income_statement,TRUE
+2,balance_sheet,TRUE
+3,cash_flow,TRUE
+4,changes_in_equity,TRUE
+5,other_disclosures,TRUE
+6,combined_statement,TRUE

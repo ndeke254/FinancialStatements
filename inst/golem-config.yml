@@ -1,0 +1,11 @@
+default:
+  golem_name: fin.extract
+  golem_version: 0.0.0.9000
+  app_prod: no
+  db_path: "data/control.duckdb"
+  lake_dir: "data/lake"
+
+production:
+  app_prod: yes
+  db_path: "data/control.duckdb"
+  lake_dir: "data/lake"
